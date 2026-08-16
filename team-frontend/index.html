@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>살펴봄 — 중고 구매 판단 도우미</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./expert.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <nav class="topbar">
+        <a class="brand" href="#top" aria-label="살펴봄 홈"><span class="brand-mark">S</span>살펴봄</a>
+        <div class="nav-progress"><span class="pulse"></span> 구매 판단을 더 선명하게</div>
+        <button class="ghost-button" id="resetButton">새 매물 분석</button>
+      </nav>
+
+      <section class="hero" id="top">
+        <div class="hero-copy">
+          <p class="eyebrow">SECONDHAND DECISION ASSISTANT</p>
+          <h1>중고 거래,<br /><em>감</em> 대신 근거로.</h1>
+          <p class="hero-description">매물 사진과 설명을 넣으면, 내 기준에 따라 확인된 정보와 꼭 물어볼 질문을 정리해드려요.</p>
+          <div class="hero-actions">
+            <button class="primary-button" id="startButton">내 구매 기준 만들기 <span>→</span></button>
+            <span class="hero-note">사진 캡처만으로 시작 가능</span>
+          </div>
+        </div>
+        <div class="hero-card">
+          <div class="scan-line"></div>
+          <p class="card-kicker">ANALYSIS PREVIEW</p>
+          <div class="phone-shot">
+            <span class="camera-dot"></span><span class="screen-copy">iPhone 14 Pro<br /><small>256GB · 딥퍼플</small></span>
+          </div>
+          <div class="analysis-row"><span>배터리 성능</span><b class="unknown">미확인</b></div>
+          <div class="analysis-row"><span>예산 적합성</span><b class="good">확인됨</b></div>
+          <div class="analysis-row"><span>수리 이력</span><b class="warn">질문 필요</b></div>
+        </div>
+      </section>
+
+      <section class="workspace" id="workspace">
+        <aside class="stepper" aria-label="분석 단계">
+          <div class="step active" data-step="1"><span>01</span><strong>구매 기준</strong><small>무엇이 중요한가요?</small></div>
+          <div class="step" data-step="2"><span>02</span><strong>매물 분석</strong><small>사진과 설명 읽기</small></div>
+          <div class="step" data-step="3"><span>03</span><strong>AI · 전문가 판단</strong><small>질문과 최종 확인</small></div>
+        </aside>
+
+        <div class="stage">
+          <section class="panel active" id="panel-1">
+            <div class="panel-heading"><p class="eyebrow">STEP 01</p><h2>어떤 물건을 찾고 있나요?</h2><p>기준을 먼저 정하면, 좋은 매물에 흔들리지 않아요.</p></div>
+            <div class="category-grid" id="categoryGrid">
+              <button class="category-card selected" data-category="스마트폰"><span>◒</span><strong>스마트폰</strong><small>아이폰 · 갤럭시</small></button>
+              <button class="category-card" data-category="노트북"><span>⌘</span><strong>노트북</strong><small>개발 · 학업용</small></button>
+              <button class="category-card" data-category="악기"><span>♫</span><strong>악기</strong><small>기타 · 키보드</small></button>
+              <button class="category-card" data-category="카메라"><span>◉</span><strong>카메라</strong><small>미러리스 · 렌즈</small></button>
+            </div>
+            <div class="criteria-grid">
+              <label>구매 목적<select id="purpose"><option>일상·학업용</option><option>입문용</option><option>업무·전문 작업용</option><option>되팔기용</option></select></label>
+              <label>최대 예산<div class="input-suffix"><input id="budget" type="number" value="550000" min="0" /><span>원</span></div></label>
+            </div>
+            <fieldset><legend>절대 포기할 수 없는 조건 <span>복수 선택</span></legend><div class="tag-options" id="mustOptions"><button class="tag selected">배터리 성능 85% 이상</button><button class="tag selected">수리 이력 없음</button><button class="tag">정품 구성품 보유</button><button class="tag">직거래 가능</button><button class="tag">생활 기스 이하</button></div></fieldset>
+            <button class="primary-button panel-next" data-next="2">이 기준으로 매물 살펴보기 <span>→</span></button>
+          </section>
+
+          <section class="panel" id="panel-2">
+            <div class="panel-heading"><p class="eyebrow">STEP 02</p><h2>매물을 살펴볼게요.</h2><p>판매글 캡처와 설명을 넣어주세요. 데모용 예시 매물이 준비돼 있어요.</p></div>
+            <div class="listing-layout">
+              <div class="listing-input">
+                <label class="upload-zone" id="uploadZone"><input type="file" accept="image/*" id="fileInput" /><span class="upload-icon">↑</span><strong id="uploadTitle">판매글 캡처를 올려주세요</strong><small id="uploadHelp">PNG, JPG · 여러 장 가능</small></label>
+                <label class="description-label">판매자 설명<textarea id="listingDescription">아이폰 14 프로 딥퍼플 256기가입니다. 23년 3월 구매했고 케이스 끼고 써서 깨진 곳 없어요. 생활기스 조금 있고 박스랑 충전 케이블 있습니다. 직거래 선호합니다.</textarea></label>
+                <button class="text-button" id="demoFill">예시 매물 정보 다시 불러오기</button>
+              </div>
+              <div class="listing-preview">
+                <div class="listing-image"><div class="listing-phone"><i></i><span>14<br />PRO</span></div><div class="shine"></div></div>
+                <div><p class="preview-label">DEMO LISTING</p><h3>아이폰 14 Pro<br />256GB 딥퍼플</h3><p class="price">420,000원</p><span class="market-chip">당근마켓에서 가져온 캡처</span></div>
+              </div>
+            </div>
+            <button class="primary-button panel-next" id="analyzeButton" data-next="3">매물 분석 시작하기 <span>↗</span></button>
+          </section>
+
+          <section class="panel" id="panel-3">
+            <div class="result-header"><div><p class="eyebrow">STEP 03 · ANALYSIS COMPLETE</p><h2>이 매물, <em id="decisionText">조건부 추천</em>이에요.</h2><p id="decisionDescription">핵심 조건은 대체로 맞지만, 구매 전 꼭 확인할 정보가 남아 있어요.</p></div><div class="score-ring"><span id="score">76</span><small>/ 100</small><b>구매 적합도</b></div></div>
+            <section class="expert-trigger" id="expertTrigger">
+              <div class="expert-orbit">✦</div>
+              <div><p class="eyebrow">EXPERT SIGNAL</p><h3>사진만으로 확신하기 어려운 항목이 있어요.</h3><p>수리 이력과 가격 적정성은 실거래 경험이 있는 전문가의 의견을 받아보면 더 선명해져요.</p></div>
+              <button class="expert-button" id="requestExpert">전문가 의견 받기 <span>→</span></button>
+            </section>
+            <section class="expert-flow hidden" id="expertFlow">
+              <div class="expert-flow-head"><div><p class="eyebrow">EXPERT REVIEW</p><h3>전문가에게 무엇을 물어볼까요?</h3></div><button class="close-expert" id="closeExpert" aria-label="전문가 요청 닫기">×</button></div>
+              <div class="expert-flow-grid">
+                <article class="expert-profile"><div class="avatar">M</div><div><span class="online-dot">답변 가능</span><h4>민준 · 스마트폰 중고 거래 전문가</h4><p>거래 128회 · 답변 채택률 94% · 평균 18분</p></div><div class="profile-tags"><span>아이폰</span><span>시세·상태</span><span>광고·협찬 없음</span></div></article>
+                <div class="expert-request"><p>AI가 자동 전달할 정보</p><div class="expert-context"><span>목적: 일상·학업용</span><span>예산: 55만 원 이하</span><span>매물: 아이폰 14 Pro · 42만 원</span><span>미확인: 배터리 · 수리 이력</span></div><div class="request-types" id="requestTypes"><button class="tag selected">이 매물 사도 될까요?</button><button class="tag selected">가격이 적정한가요?</button><button class="tag">판매자 질문 검토</button><button class="tag">다른 매물과 비교</button></div><button class="primary-button" id="submitExpert">검토 요청 보내기 <span>↗</span></button></div>
+              </div>
+              <div class="expert-reply hidden" id="expertReply"><div class="reply-author"><div class="avatar">M</div><div><p class="eyebrow">EXPERT OPINION · 방금 도착</p><h3>민준 님의 조건부 추천</h3></div><span class="confidence">확신도 높음</span></div><div class="opinion-grid"><div><b>사실 확인</b><p>설명상 구성품과 외관 정보는 평균적인 중고 매물 수준입니다.</p></div><div><b>경험 기반 조언</b><p>42만 원은 나쁘지 않지만, 배터리 85% 이상이라면 2~3만 원 조정 후 구매를 권합니다.</p></div><div><b>추가 확인 필요</b><p>사설 수리 여부는 설정 화면만으로 판단하기 어려우니, 부품·서비스 이력을 꼭 확인하세요.</p></div></div><div class="expert-actions"><span>이 답변을 채택하면 전문가에게 <strong>+20 크레딧</strong>이 지급됩니다.</span><button class="adopt-button" id="adoptExpert">도움됐어요 · 답변 채택</button></div></div>
+            </section>
+            <div class="result-grid">
+              <article class="checklist-card"><div class="card-title"><h3>내 기준 체크리스트</h3><span>근거 포함</span></div><div id="checklist"></div></article>
+              <article class="question-card"><div class="card-title"><h3>판매자에게 먼저 물어볼 것</h3><span class="count-badge" id="questionCount">3</span></div><div id="questions"></div><button class="copy-button" id="copyQuestions">질문 한 번에 복사</button></article>
+            </div>
+            <section class="reply-box"><div><p class="eyebrow">ANSWER UPDATE</p><h3>판매자 답변을 받았나요?</h3><p>답변을 붙여넣으면 체크리스트와 판단이 업데이트돼요.</p></div><div class="reply-controls"><textarea id="sellerReply" placeholder="예: 배터리 성능은 89%이고, 수리한 적 없어요. 직거래 때 기능 확인 가능합니다."></textarea><button class="secondary-button" id="applyReply">답변 반영하기</button></div></section>
+            <div class="next-actions"><button class="text-button" data-go="1">기준 다시 설정</button><button class="primary-button" id="completeButton">구매 전 최종 점검 보기 <span>→</span></button></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="how-it-works"><p class="eyebrow">WHY 살펴봄</p><h2>사진 속 정보는 읽고,<br />빠진 정보는 물어봅니다.</h2><div class="feature-row"><div><b>01</b><h3>내 기준을 잠금</h3><p>예산과 필수 조건을 먼저 고정해요.</p></div><div><b>02</b><h3>근거를 보여줌</h3><p>AI 판단마다 사진·설명 근거를 남겨요.</p></div><div><b>03</b><h3>거래를 준비함</h3><p>우선순위 질문으로 대화를 돕습니다.</p></div></div></section>
+      <footer>살펴봄 · 중고 거래를 위한 개인 구매 판단 도우미</footer>
+    </main>
+    <div class="toast" id="toast" role="status"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
