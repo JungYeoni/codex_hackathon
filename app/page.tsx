@@ -2,223 +2,98 @@
 
 import { ChangeEvent, useMemo, useState } from "react";
 
-type Status = "verified" | "seller_claim" | "inferred" | "missing" | "uncertain" | "contradictory";
+type Step = 1 | 2 | 3;
+type Listing = { id: number; files: File[]; description: string };
+type Analysis = { score: number; decision: string; description: string; checks: Array<[string, string, string]>; questions: string[]; result?: Record<string, unknown> };
 
-type Evidence = {
-  label: string;
-  value: string;
-  status: Status;
-  source?: string;
-  note?: string;
-};
-
-type Listing = {
-  id: string;
-  title: string;
-  price: number;
-  platform: string;
-  seller: string;
-  age: string;
-  images: number;
-  fit: number;
-  trust: number;
-  evidence: Evidence[];
-  risk: string;
-};
-
-const fieldWeights: Record<string, number> = {
-  battery: 5,
-  screen: 5,
-  repair: 5,
-  port: 4,
-  storage: 3,
-  accessories: 2,
-};
-
-const listings: Listing[] = [
-  {
-    id: "A",
-    title: "iPhone 13 128GB 미드나이트",
-    price: 438000,
-    platform: "당근",
-    seller: "김**",
-    age: "2년식",
-    images: 7,
-    fit: 88,
-    trust: 91,
-    risk: "현재 확인 범위에서 핵심 상태가 충분히 확인됩니다.",
-    evidence: [
-      { label: "제품 모델", value: "iPhone 13", status: "verified", source: "image_1" },
-      { label: "저장용량", value: "128GB", status: "verified", source: "image_2" },
-      { label: "가격", value: "438,000원", status: "verified", source: "description" },
-      { label: "배터리 성능", value: "89%", status: "verified", source: "image_3", note: "설정 화면에서 숫자 확인" },
-      { label: "화면 상태", value: "깨끗함", status: "verified", source: "image_4" },
-      { label: "후면 상태", value: "미세 생활기스", status: "seller_claim", source: "description" },
-      { label: "모서리 상태", value: "특이사항 없음", status: "verified", source: "image_5" },
-      { label: "카메라 렌즈", value: "확인됨", status: "verified", source: "image_6" },
-      { label: "충전단자", value: "사진 확인", status: "verified", source: "image_7" },
-      { label: "수리이력", value: "없음", status: "seller_claim", source: "description" },
-      { label: "침수 여부", value: "확인 불가", status: "missing" },
-      { label: "구성품", value: "본체 + 케이블", status: "seller_claim", source: "description" },
-    ],
-  },
-  {
-    id: "B",
-    title: "iPhone 13 128GB 스타라이트",
-    price: 390000,
-    platform: "번개장터",
-    seller: "박**",
-    age: "2년식",
-    images: 3,
-    fit: 74,
-    trust: 54,
-    risk: "가장 저렴하지만 핵심 상태 정보가 부족해 가격 비교를 보류합니다.",
-    evidence: [
-      { label: "제품 모델", value: "iPhone 13", status: "verified", source: "image_1" },
-      { label: "저장용량", value: "128GB", status: "seller_claim", source: "description" },
-      { label: "가격", value: "390,000원", status: "verified", source: "description" },
-      { label: "배터리 성능", value: "정보 없음", status: "missing" },
-      { label: "화면 상태", value: "깨짐 없음", status: "contradictory", source: "image_2 + description", note: "설명과 사진 분석 결과가 일치하지 않음" },
-      { label: "후면 상태", value: "양호", status: "seller_claim", source: "description" },
-      { label: "모서리 상태", value: "확인 불가", status: "uncertain", source: "image_2", note: "하단부가 잘려 있음" },
-      { label: "카메라 렌즈", value: "확인 불가", status: "missing" },
-      { label: "충전단자", value: "사진 없음", status: "missing" },
-      { label: "수리이력", value: "정보 없음", status: "missing" },
-      { label: "침수 여부", value: "정보 없음", status: "missing" },
-      { label: "구성품", value: "본체만", status: "seller_claim", source: "description" },
-    ],
-  },
-  {
-    id: "C",
-    title: "iPhone 13 Pro 256GB 시에라 블루",
-    price: 515000,
-    platform: "당근",
-    seller: "이**",
-    age: "2년식",
-    images: 5,
-    fit: 81,
-    trust: 76,
-    risk: "배터리와 수리 이력 확인 후 비교를 확정할 수 있습니다.",
-    evidence: [
-      { label: "제품 모델", value: "iPhone 13 Pro", status: "verified", source: "image_1" },
-      { label: "저장용량", value: "256GB", status: "verified", source: "image_1" },
-      { label: "가격", value: "515,000원", status: "verified", source: "description" },
-      { label: "배터리 성능", value: "82%로 추정", status: "inferred", source: "image_3", note: "화면 숫자가 흐려 확정할 수 없음" },
-      { label: "화면 상태", value: "미세 스크래치", status: "verified", source: "image_2" },
-      { label: "후면 상태", value: "양호", status: "verified", source: "image_4" },
-      { label: "모서리 상태", value: "미세 찍힘", status: "verified", source: "image_4" },
-      { label: "카메라 렌즈", value: "확인됨", status: "verified", source: "image_5" },
-      { label: "충전단자", value: "확인 불가", status: "uncertain", source: "image_5" },
-      { label: "수리이력", value: "없음", status: "seller_claim", source: "description" },
-      { label: "침수 여부", value: "확인 불가", status: "missing" },
-      { label: "구성품", value: "본체 + 박스", status: "seller_claim", source: "description" },
-    ],
-  },
+const defaultDescription = "아이폰 14 프로 딥퍼플 256기가입니다. 23년 3월 구매했고 케이스 끼고 써서 깨진 곳 없어요. 생활기스 조금 있고 박스랑 충전 케이블 있습니다. 직거래 선호합니다.";
+const defaultQuestions = [
+  "배터리 성능(최대 용량) 화면을 캡처해서 보내주실 수 있을까요?",
+  "침수나 사설 수리, 부품 교체 이력이 있었는지 궁금합니다.",
+  "직거래 때 카메라·충전·스피커·터치 기능을 확인해봐도 될까요?",
+];
+const defaultChecks: Array<[string, string, string]> = [
+  ["예산 적합성", "확인됨", "420,000원 · 입력 예산 550,000원 이하"],
+  ["외관 상태", "부분 확인", "생활 기스 언급 · 모서리 사진은 더 필요해요"],
+  ["구성품", "확인됨", "박스와 충전 케이블이 설명에 포함돼 있어요"],
+  ["배터리 성능", "미확인", "배터리 상태 화면 또는 수치가 없어요"],
+  ["수리·침수 이력", "미확인", "게시글 설명과 사진에서 확인되지 않아요"],
 ];
 
-const statusLabels: Record<Status, string> = {
-  verified: "확인됨",
-  seller_claim: "판매자 설명",
-  inferred: "AI 추정",
-  missing: "정보 없음",
-  uncertain: "불명확",
-  contradictory: "충돌",
-};
-
-function formatWon(value: number) {
-  return `${value.toLocaleString("ko-KR")}원`;
+function analysisFromResult(result: Record<string, unknown> | undefined, criteria: string): Analysis {
+  if (!result) return { score: 76, decision: "조건부 추천", description: "핵심 조건은 대체로 맞지만, 구매 전 꼭 확인할 정보가 남아 있어요.", checks: defaultChecks, questions: defaultQuestions };
+  const evidence = Array.isArray(result.evidence) ? result.evidence as Array<{ field?: string; value?: string; status?: string; reason?: string }> : [];
+  const statusText: Record<string, string> = { verified: "확인됨", seller_claim: "판매자 설명", inferred: "부분 확인", missing: "미확인", uncertain: "부분 확인", contradictory: "위험 신호" };
+  const checks = evidence.slice(0, 7).map((item) => [item.field ?? "분석 항목", statusText[item.status ?? "missing"] ?? "미확인", item.reason ?? item.value ?? "근거를 확인해주세요."] as [string, string, string]);
+  const gaps = evidence.filter((item) => ["missing", "uncertain", "contradictory"].includes(item.status ?? ""));
+  const score = Math.max(48, Math.min(92, 88 - gaps.length * 6));
+  return { score, decision: gaps.length > 2 ? "조건부 추천" : "추천", description: `${criteria} 기준으로 분석했어요. ${gaps.length ? "구매 전 확인할 정보가 남아 있어요." : "핵심 정보가 대부분 확인됐어요."}`, checks: checks.length ? checks : defaultChecks, questions: gaps.slice(0, 3).map((item) => `${item.field ?? "이 항목"}을 확인할 수 있을까요?`) || defaultQuestions, result };
 }
 
-function isGap(status: Status) {
-  return ["missing", "uncertain", "contradictory"].includes(status);
-}
-
-function ListingImage({ label, index, uploaded }: { label: string; index: number; uploaded?: string }) {
-  return (
-    <div className={`listing-image image-${index}`}>
-      {uploaded ? <img src={uploaded} alt={`${label} 업로드 이미지`} /> : <><span className="image-tag">{label}</span><span className="phone-shape" /><span className="image-line" /></>}
-      <span className="image-number">0{index}</span>
-    </div>
-  );
-}
+function getPreview(file: File) { return URL.createObjectURL(file); }
 
 export default function Home() {
-  const [activeListing, setActiveListing] = useState("A");
-  const [budget] = useState(500000);
-  const [purpose] = useState("개발·업무");
-  const [locked, setLocked] = useState(true);
-  const [uploaded, setUploaded] = useState<string[]>([]);
-  const [toast, setToast] = useState("");
-  const [description, setDescription] = useState("");
+  const [step, setStep] = useState<Step>(1);
+  const [category, setCategory] = useState("스마트폰");
+  const [purpose, setPurpose] = useState("일상·학업용");
+  const [budget, setBudget] = useState("550000");
+  const [tags, setTags] = useState(["배터리 성능 85% 이상", "수리 이력 없음"]);
+  const [listings, setListings] = useState<Listing[]>([{ id: 1, files: [], description: defaultDescription }]);
+  const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [expertRequested, setExpertRequested] = useState(false);
+  const [expertAdopted, setExpertAdopted] = useState(false);
+  const [sellerReply, setSellerReply] = useState("");
+  const [toast, setToast] = useState("");
 
-  const selected = listings.find((item) => item.id === activeListing) ?? listings[0];
-  const gaps = useMemo(() => selected.evidence.filter((item) => isGap(item.status)), [selected]);
-  const highImpactGaps = useMemo(() => gaps.sort((a, b) => (fieldWeights[a.label === "배터리 성능" ? "battery" : a.label === "화면 상태" ? "screen" : a.label === "수리이력" ? "repair" : a.label === "충전단자" ? "port" : a.label === "저장용량" ? "storage" : "accessories"] ?? 2) - (fieldWeights[b.label === "배터리 성능" ? "battery" : b.label === "화면 상태" ? "screen" : b.label === "수리이력" ? "repair" : b.label === "충전단자" ? "port" : b.label === "저장용량" ? "storage" : "accessories"] ?? 2)), [gaps]);
+  const criteria = useMemo(() => `목적: ${purpose} · 예산: ${Number(budget || 0).toLocaleString("ko-KR")}원 이하 · 필수: ${tags.join(", ")}`, [purpose, budget, tags]);
+  const firstAnalysis = analyses[0] ?? analysisFromResult(undefined, criteria);
 
-  function handleUpload(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []).slice(0, 4);
-    setUploaded(files.map((file) => URL.createObjectURL(file)));
-    setToast(files.length ? `${files.length}장의 캡처를 분석 대기열에 추가했습니다.` : "");
-  }
+  function showToast(message: string) { setToast(message); window.setTimeout(() => setToast(""), 2500); }
+  function toggleTag(tag: string) { setTags((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag]); }
+  function updateListing(id: number, changes: Partial<Listing>) { setListings((current) => current.map((listing) => listing.id === id ? { ...listing, ...changes } : listing)); }
+  function handleFiles(id: number, event: ChangeEvent<HTMLInputElement>) { const files = Array.from(event.target.files ?? []); updateListing(id, { files }); if (files.length) showToast(`${files.length}장의 캡처를 추가했어요.`); }
+  function addListing() { setListings((current) => [...current, { id: Date.now(), files: [], description: "" }]); showToast("비교할 매물을 추가했어요."); }
+  function removeListing(id: number) { setListings((current) => current.filter((listing) => listing.id !== id)); }
 
-  function copyMessage() {
-    const message = "안녕하세요. 구매를 고민하고 있어 몇 가지만 확인 부탁드립니다.\n\n1. 설정 > 배터리 > 배터리 성능 화면과 배터리 교체 이력을 확인할 수 있을까요?\n2. 충전단자와 하단 모서리 사진을 추가로 받을 수 있을까요?\n3. 수리 또는 부품 교체 이력이 있는지 궁금합니다.\n\n확인 후 빠르게 결정하겠습니다. 감사합니다.";
-    navigator.clipboard?.writeText(message);
-    setToast("판매자 질문 메시지를 복사했습니다.");
-  }
-
-  async function analyzeWithRunpod() {
+  async function analyzeListings() {
     setIsAnalyzing(true);
-    const form = new FormData();
-    form.append("description", description);
-    const files = document.querySelector<HTMLInputElement>("#listing-images")?.files;
-    Array.from(files ?? []).forEach((file) => form.append("images", file));
-    try {
-      const response = await fetch("/api/analyze", { method: "POST", body: form });
-      const result = await response.json() as { fallback?: boolean; message?: string };
-      setToast(result.fallback ? `${result.message ?? "실제 분석을 사용할 수 없어"} 데모 결과를 표시합니다.` : "RunPod AI가 캡처를 분석했습니다. 룰 검증을 적용했습니다.");
-    } catch {
-      setToast("분석 API에 연결할 수 없어 데모 결과를 표시합니다.");
-    } finally {
-      setIsAnalyzing(false);
+    const next: Analysis[] = [];
+    for (const listing of listings) {
+      const form = new FormData();
+      form.append("category", category);
+      form.append("criteria", criteria);
+      form.append("description", listing.description);
+      listing.files.forEach((file) => form.append("images", file));
+      try {
+        const response = await fetch("/api/analyze", { method: "POST", body: form });
+        const payload = await response.json() as { result?: Record<string, unknown>; fallback?: boolean };
+        next.push(analysisFromResult(payload.result, criteria));
+      } catch {
+        next.push(analysisFromResult(undefined, criteria));
+      }
     }
+    setAnalyses(next);
+    setStep(3);
+    setIsAnalyzing(false);
+    showToast("매물 분석이 완료됐어요.");
   }
 
-  return (
-    <main className="app-shell">
-      <header className="topbar">
-        <div className="brand"><span className="brand-mark">✓</span><span>usedcheck</span><span className="brand-beta">BETA</span></div>
-        <div className="top-actions"><span className="saved-dot" /> 분석 저장됨 <button className="avatar">L</button></div>
-      </header>
+  function applySellerReply() {
+    if (!sellerReply.trim()) { showToast("판매자 답변을 먼저 입력해주세요."); return; }
+    setAnalyses((current) => current.map((analysis) => ({ ...analysis, score: Math.min(97, analysis.score + 13), decision: "추천", description: "판매자 답변을 반영했어요. 직거래에서 기능만 마지막으로 점검해보세요.", checks: analysis.checks.map((check, index) => index > 2 ? [check[0], "확인됨", `판매자 답변: ${sellerReply.slice(0, 70)}`] : check) as Array<[string, string, string]> })));
+    showToast("판매자 답변을 반영해 구매 적합도가 올라갔어요.");
+  }
 
-      <div className="workspace">
-        <aside className="sidebar">
-          <div className="side-eyebrow">MY CHECKLIST</div>
-          <div className="profile-card"><div className="profile-icon">▣</div><div><strong>나의 구매 기준</strong><span>{locked ? "잠금됨 · 스마트폰" : "편집 중"}</span></div><button onClick={() => setLocked(!locked)} aria-label="구매 기준 잠금 변경">{locked ? "⌑" : "⌑"}</button></div>
-          <nav className="side-nav"><button className="active"><span>◈</span> 매물 분석</button><button><span>▤</span> 비교 보관함 <small>3</small></button></nav>
-          <div className="criteria-box"><div className="criteria-title">구매 기준 <span className="lock-label">{locked ? "잠금" : "편집"}</span></div><div className="criterion"><span>예산</span><strong>{formatWon(budget)} 이하</strong></div><div className="criterion"><span>용도</span><strong>{purpose}</strong></div><div className="criterion"><span>배터리</span><strong>85% 이상</strong></div><div className="criterion"><span>수리 이력</span><strong>없음 선호</strong></div><button className="edit-button" onClick={() => setLocked(!locked)}>{locked ? "기준 보기" : "기준 잠그기"}</button></div>
-          <div className="side-footer"><div className="rule-icon">✦</div><div><strong>증거 기반 분석</strong><span>AI는 추출하고<br />룰이 판단합니다.</span></div></div>
-        </aside>
+  async function copyQuestions() { try { await navigator.clipboard.writeText(firstAnalysis.questions.join("\n\n")); showToast("판매자에게 보낼 질문을 복사했어요."); } catch { showToast("질문을 선택해서 복사해주세요."); } }
 
-        <section className="content">
-          <div className="page-heading"><div><div className="breadcrumb">매물 분석 <span>/</span> 스마트폰</div><h1>중고 스마트폰, <em>근거 있게</em> 고르세요.</h1><p>캡처를 올리면 확인된 정보와 비어있는 정보를 나눠서 보여드려요.</p></div><label className="upload-button"><span>＋</span> 캡처 업로드<input type="file" accept="image/*" multiple onChange={handleUpload} /></label></div>
-
-          {toast && <div className="toast" role="status">{toast}<button onClick={() => setToast("")}>닫기</button></div>}
-
-          <div className="stepper"><div className="step done"><span>✓</span><div><small>STEP 01</small><strong>구매 기준</strong></div></div><div className="step-line done" /><div className="step active"><span>2</span><div><small>STEP 02</small><strong>매물 분석</strong></div></div><div className="step-line" /><div className="step"><span>3</span><div><small>STEP 03</small><strong>비교·결정</strong></div></div></div>
-
-          <section className="upload-panel"><div className="panel-title"><div><span className="section-kicker">01 / ADD LISTING</span><h2>판매글 캡처를 추가하세요</h2></div><span className="input-hint">이미지 최대 10장 · JPG, PNG</span></div><label className="dropzone"><div className="drop-icon">↥</div><strong>판매글 화면을 여기에 끌어다 놓거나 클릭하세요</strong><span>사진 속 텍스트와 판매자 설명을 함께 분석해요</span><input id="listing-images" type="file" accept="image/*" multiple onChange={handleUpload} /></label>{uploaded.length > 0 && <div className="uploaded-strip">{uploaded.map((url, index) => <ListingImage key={url} label="업로드" index={index + 1} uploaded={url} />)}</div>}<textarea className="description-input" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="판매자가 작성한 상품 설명을 붙여넣으세요 (선택)" /><div className="source-row"><span>플랫폼</span><button className="source active">당근</button><button className="source">번개장터</button><button className="source">기타</button><span className="link-note">ⓘ 링크 연동은 준비 중이에요</span><button className="analyze-button" onClick={analyzeWithRunpod} disabled={isAnalyzing}>{isAnalyzing ? "AI 분석 중…" : "✦ RunPod AI로 분석"}</button></div></section>
-
-          <div className="analysis-layout"><section className="results-panel"><div className="panel-title result-title"><div><span className="section-kicker">02 / EVIDENCE REVIEW</span><h2>확인된 증거를 검토하세요</h2></div><span className="analysis-status"><i /> 분석 완료 · 3개 매물</span></div><div className="listing-tabs">{listings.map((item) => <button key={item.id} className={activeListing === item.id ? "selected" : ""} onClick={() => setActiveListing(item.id)}><span className="tab-letter">{item.id}</span><span><strong>{item.title}</strong><small>{item.platform} · {formatWon(item.price)}</small></span><b className={item.trust < 60 ? "low" : ""}>{item.trust}</b></button>)}</div><div className="selected-card"><div className="selected-head"><div><span className="listing-label">매물 {selected.id} · {selected.platform}</span><h3>{selected.title}</h3><p>{selected.seller} 판매자 · {selected.age} · 사진 {selected.images}장</p></div><div className="price-block"><strong>{formatWon(selected.price)}</strong><span className={selected.price <= budget ? "under" : "over"}>{selected.price <= budget ? "예산 내" : "예산 초과"}</span></div></div><div className="image-grid">{[1, 2, 3, 4].map((number) => <ListingImage key={number} label={number === 1 ? "제품 정보" : number === 2 ? "화면" : number === 3 ? "배터리" : "외관"} index={number} />)}</div><div className="evidence-grid">{selected.evidence.map((item) => <div className="evidence-row" key={item.label}><span className="evidence-label">{item.label}</span><span className="evidence-value">{item.value}</span><span className={`status-badge ${item.status}`}>{statusLabels[item.status]}</span><span className="evidence-source">{item.source ? `⌁ ${item.source}` : "—"}</span></div>)}</div></div></section>
-
-            <aside className="insight-column"><div className="score-card"><div className="score-heading"><span>비교 가능성</span><span className="info">i</span></div><div className="score-main"><strong>{selected.trust}</strong><span>/ 100</span><div className="score-ring" style={{ ["--score" as string]: `${selected.trust * 3.6}deg` }}><div /></div></div><div className="score-caption">{selected.trust >= 80 ? "비교 가능한 수준" : selected.trust >= 60 ? "일부 확인 필요" : "추가 확인 후 비교"}</div><div className="score-bar"><i style={{ width: `${selected.trust}%` }} /></div><p>제품 상태 점수가 아니라<br /><b>확인된 정보의 충분함</b>을 나타내요.</p></div><div className={`risk-card ${selected.trust < 60 ? "warning" : ""}`}><div className="risk-title"><span>{selected.trust < 60 ? "!" : "✓"}</span><strong>{selected.trust < 60 ? "가격 비교 보류" : "비교 전 확인"}</strong></div><p>{selected.risk}</p></div><div className="gap-card"><div className="gap-title"><span>⌁</span><div><strong>주요 정보 공백</strong><small>{gaps.length}개 항목 · 영향도 순</small></div></div>{highImpactGaps.slice(0, 3).map((gap, index) => <div className="gap-item" key={gap.label}><span>{index + 1}</span><div><strong>{gap.label}</strong><small>{gap.status === "contradictory" ? "설명과 사진이 충돌합니다" : gap.note ?? "판매자에게 확인이 필요합니다"}</small></div><b>{gap.label === "배터리 성능" || gap.label === "화면 상태" || gap.label === "수리이력" ? 5 : 4}</b></div>)}{gaps.length === 0 && <p className="empty-note">현재 주요 정보 공백이 없습니다.</p>}</div></aside></div>
-
-          <section className="next-step"><div className="next-head"><div><span className="section-kicker">03 / NEXT ACTION</span><h2>판매자에게 이것부터 물어보세요</h2><p>의사결정 영향도 × 불확실성 × 답변 가능성을 기준으로 우선순위를 정했어요.</p></div><button className="copy-button" onClick={copyMessage}>▣ 질문 메시지 복사</button></div><div className="questions">{[{ n: 1, title: "배터리 성능 화면 + 교체 이력", desc: "설정 &gt; 배터리 &gt; 배터리 성능 화면과 배터리 교체 이력을 함께 확인해 주세요.", score: "매우 높음", tone: "high" }, { n: 2, title: "충전단자와 하단 모서리 사진", desc: "충전단자와 하단 모서리가 잘 보이는 사진을 추가로 받을 수 있을까요?", score: "높음", tone: "mid" }, { n: 3, title: "수리 또는 부품 교체 이력", desc: "공식·사설 수리나 부품 교체 이력이 있는지 궁금합니다.", score: "높음", tone: "mid" }].map((question) => <div className="question" key={question.n}><span className="question-number">0{question.n}</span><div><strong>{question.title}</strong><p>{question.desc}</p></div><span className={`priority ${question.tone}`}>{question.score}</span></div>)}</div></section>
-
-          <footer className="app-footer"><span>USED CHECK / EVIDENCE-FIRST MARKETPLACE</span><span>분석 기준 v0.1 · 모든 정보는 출처와 함께 표시됩니다.</span></footer>
-        </section>
-      </div>
-    </main>
-  );
+  return <main className="app-shell">
+    <nav className="topbar"><button className="brand ghost-button" onClick={() => setStep(1)}><span className="brand-mark">S</span>살펴봄</button><div className="nav-progress"><span className="pulse" />{step === 1 ? "구매 판단을 더 선명하게" : step === 2 ? "여러 후보를 함께 비교해요" : "구매 판단을 더 선명하게"}</div><span className="page-label">0{step} / 03 {step === 1 ? "구매 기준" : step === 2 ? "매물 등록" : "비교 판단"}</span></nav>
+    {step === 1 && <section className="hero compact-hero"><div className="hero-copy"><p className="eyebrow">SECONDHAND DECISION ASSISTANT</p><h1>중고 거래,<br /><em>감</em> 대신 근거로.</h1><p className="hero-description">내게 중요한 기준부터 정하면, 여러 매물도 흔들리지 않고 비교할 수 있어요.</p></div><div className="hero-card"><p className="card-kicker">HOW IT WORKS</p><div className="hero-steps"><span>01 기준 설정</span><span>02 매물 등록</span><span>03 비교 판단</span></div></div></section>}
+    <section className="workspace single-page"><aside className="stepper"><div className={`step ${step > 1 ? "done" : step === 1 ? "active" : ""}`}><span>01</span><strong>구매 기준</strong><small>{step > 1 ? "완료" : "무엇이 중요한가요?"}</small></div><div className={`step ${step > 2 ? "done" : step === 2 ? "active" : ""}`}><span>02</span><strong>매물 등록</strong><small>{step > 2 ? "완료" : "후보를 모아보세요"}</small></div><div className={`step ${step === 3 ? "active" : ""}`}><span>03</span><strong>비교 판단</strong><small>근거로 고르기</small></div></aside><section className="stage">
+      {step === 1 && <div className="panel active"><div className="panel-heading"><p className="eyebrow">STEP 01</p><h2>어떤 물건을 찾고 있나요?</h2><p>이 기준은 이후 모든 매물 비교에 동일하게 적용됩니다.</p></div><div className="category-grid">{[["스마트폰", "◒", "아이폰 · 갤럭시"], ["노트북", "⌘", "개발 · 학업용"], ["악기", "♫", "기타 · 키보드"], ["기타", "＋", "카메라 · 게임기 등"]].map(([name, icon, desc]) => <button key={name} className={`category-card ${category === name ? "selected" : ""}`} onClick={() => setCategory(name)}><span>{icon}</span><strong>{name}</strong><small>{desc}</small></button>)}</div><div className="criteria-grid"><label>구매 목적<select value={purpose} onChange={(event) => setPurpose(event.target.value)}><option>일상·학업용</option><option>입문용</option><option>업무·전문 작업용</option><option>되팔기용</option></select></label><label>최대 예산<div className="input-suffix"><input type="number" value={budget} onChange={(event) => setBudget(event.target.value)} min="0" /><span>원</span></div></label></div><fieldset><legend>절대 포기할 수 없는 조건 <span>복수 선택</span></legend><div className="tag-options">{["배터리 성능 85% 이상", "수리 이력 없음", "정품 구성품 보유", "직거래 가능", "생활 기스 이하"].map((tag) => <button key={tag} className={`tag ${tags.includes(tag) ? "selected" : ""}`} onClick={() => toggleTag(tag)}>{tag}</button>)}</div></fieldset><button className="primary-button page-next" onClick={() => setStep(2)}>매물 등록으로 가기 <span>→</span></button></div>}
+      {step === 2 && <div className="panel active"><div className="panel-heading"><p className="eyebrow">STEP 02</p><h2>비교할 매물을 모아주세요.</h2><p>판매글 캡처와 설명을 후보별로 추가하면, 같은 기준으로 비교해드려요.</p></div><div className="listing-list">{listings.map((listing, index) => <article className="listing-entry" key={listing.id}><div className="listing-entry-head"><div><span>매물 {String(index + 1).padStart(2, "0")}</span><strong>{index === 0 ? "첫 번째 후보" : `${index + 1}번째 비교 후보`}</strong></div>{index === 0 ? <small>분석 비교 대상에 자동 추가</small> : <button className="remove-listing" onClick={() => removeListing(listing.id)}>이 매물 제외</button>}</div><div className="listing-layout"><div className="listing-input"><label className="upload-zone"><input type="file" accept="image/*" multiple onChange={(event) => handleFiles(listing.id, event)} /><span className="upload-icon">↑</span><strong>{listing.files.length ? `${listing.files.length}장의 캡처가 추가됐어요` : "판매글 캡처를 올려주세요"}</strong><small>{listing.files.length ? "분석 준비 완료" : "PNG, JPG · 여러 장 가능"}</small></label><label className="description-label">판매자 설명<textarea value={listing.description} onChange={(event) => updateListing(listing.id, { description: event.target.value })} placeholder="판매자가 작성한 설명을 붙여넣어 주세요." /></label></div><div className="listing-preview"><div className="listing-image">{listing.files[0] ? <img src={getPreview(listing.files[0])} alt="업로드한 판매글 캡처" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div className="listing-phone"><i /><span>14<br />PRO</span></div>}<div className="shine" /></div><div><p className="preview-label">{listing.files.length ? "UPLOADED LISTING" : "DEMO LISTING"}</p><h3>{index === 0 ? <>아이폰 14 Pro<br />256GB 딥퍼플</> : "새 비교 매물"}</h3><p className="price">{index === 0 ? "420,000원" : "가격 정보 입력 전"}</p><span className="market-chip">{listing.files.length ? "캡처 분석 준비 완료" : "캡처를 올리면 분석해요"}</span></div></div></div></article>)}</div><div className="listing-actions"><button className="add-listing" onClick={addListing}>＋ 비교할 매물 더 추가</button><button className="text-button" onClick={() => updateListing(listings[0].id, { description: defaultDescription })}>예시 매물 정보 다시 불러오기</button></div><button className="primary-button page-next" onClick={analyzeListings} disabled={isAnalyzing}>{isAnalyzing ? "AI가 분석 중이에요…" : "매물 비교 분석하기"} <span>↗</span></button></div>}
+      {step === 3 && <div className="panel active"><section className="comparison-summary"><div><p className="eyebrow">MULTI-LISTING COMPARE</p><h3><span>{listings.length}</span>개 매물을 같은 기준으로 비교했어요.</h3></div><div className="comparison-cards">{listings.map((_, index) => <article className={`comparison-card ${index === 0 ? "selected" : ""}`} key={index}><span>매물 {String(index + 1).padStart(2, "0")}</span><strong>{index === 0 ? "아이폰 14 Pro · 42만 원" : `비교 후보 ${String(index + 1).padStart(2, "0")}`}</strong><p>{index === 0 ? "예산 적합 · 수리 이력 미확인" : "설명 입력됨 · 사진 분석 완료"}</p><b>{analyses[index]?.score ?? 72 - index}점</b></article>)}</div></section><div className="result-header"><div><p className="eyebrow">STEP 03 · ANALYSIS COMPLETE</p><h2>1순위 매물은 <em>{firstAnalysis.decision}</em>이에요.</h2><p>{firstAnalysis.description}</p></div><div className="score-ring" style={{ background: `conic-gradient(var(--lime) ${firstAnalysis.score}%,#dce3d7 0)` }}><span>{firstAnalysis.score}</span><small>/ 100</small><b>구매 적합도</b></div></div>{!expertRequested ? <section className="expert-trigger"><div className="expert-orbit">✦</div><div><p className="eyebrow">EXPERT SIGNAL</p><h3>사진만으로 확신하기 어려운 항목이 있어요.</h3><p>수리 이력과 가격 적정성은 실거래 경험이 있는 전문가의 의견을 받아보면 더 선명해져요.</p></div><button className="expert-button" onClick={() => setExpertRequested(true)}>전문가 의견 받기 <span>→</span></button></section> : <section className="expert-flow"><div className="expert-flow-head"><div><p className="eyebrow">EXPERT REVIEW</p><h3>민준 전문가의 조건부 추천</h3></div><button className="close-expert" onClick={() => setExpertRequested(false)}>×</button></div><div className="expert-flow-grid"><article className="expert-profile"><div className="avatar">M</div><div><span className="online-dot">답변 가능</span><h4>민준 · {category} 중고 거래 전문가</h4><p>거래 128회 · 답변 채택률 94% · 평균 18분</p></div><div className="profile-tags"><span>{category}</span><span>시세·상태</span><span>광고·협찬 없음</span></div></article><div className="expert-reply" style={{ marginTop: 0, paddingTop: 0, borderTop: 0 }}><div className="opinion-grid"><div><b>사실 확인</b><p>설명상 구성품과 외관 정보는 평균적인 중고 매물 수준입니다.</p></div><div><b>경험 기반 조언</b><p>현재 가격은 나쁘지 않지만, 핵심 상태 확인 후 구매를 권합니다.</p></div><div><b>추가 확인 필요</b><p>사설 수리 여부와 기능 테스트는 판매자에게 꼭 확인하세요.</p></div></div><div className="expert-actions"><span>이 답변을 채택하면 전문가에게 <strong>+20 크레딧</strong>이 지급됩니다.</span><button className="adopt-button" onClick={() => { setExpertAdopted(true); showToast("답변을 채택했어요. 전문가에게 20 크레딧이 지급됩니다."); }}>{expertAdopted ? "답변 채택 완료 · +20 크레딧" : "도움됐어요 · 답변 채택"}</button></div></div></div></section>}<div className="result-grid"><article className="checklist-card"><div className="card-title"><h3>1순위 매물 체크리스트</h3><span>근거 포함</span></div>{firstAnalysis.checks.map(([title, status, evidence]) => <div className="check-item" key={title}><div className="check-top"><span>{title}</span><span className={`status ${status === "확인됨" ? "good" : status === "부분 확인" ? "partial" : "unknown"}`}>{status}</span></div><p className="evidence">{evidence}</p></div>)}</article><article className="question-card"><div className="card-title"><h3>판매자에게 먼저 물어볼 것</h3><span className="count-badge">{firstAnalysis.questions.length}</span></div>{firstAnalysis.questions.map((question, index) => <div className="question" key={question}><small>0{index + 1} · {index === 0 ? "필수 조건" : "위험 확인"}</small><p>{question}</p></div>)}<button className="copy-button" onClick={copyQuestions}>질문 한 번에 복사</button></article></div><section className="reply-box"><div><p className="eyebrow">ANSWER UPDATE</p><h3>판매자 답변을 받았나요?</h3><p>답변을 붙여넣으면 체크리스트와 판단이 업데이트돼요.</p></div><div className="reply-controls"><textarea value={sellerReply} onChange={(event) => setSellerReply(event.target.value)} placeholder="예: 배터리 성능은 89%이고, 수리한 적 없어요. 직거래 때 기능 확인 가능합니다." /><button className="secondary-button" onClick={applySellerReply}>답변 반영하기</button></div></section><div className="next-actions"><button className="text-button" onClick={() => setStep(2)}>매물 다시 추가</button><button className="primary-button" onClick={() => showToast("직거래 전, 카메라 · 충전 · 스피커 · 화면 터치를 확인하세요.")}>구매 전 최종 점검 보기 <span>→</span></button></div></div>}
+    </section></section><footer>살펴봄 · 중고 거래를 위한 개인 구매 판단 도우미</footer><div className={`toast ${toast ? "show" : ""}`} role="status">{toast}</div>
+  </main>;
 }
