@@ -13,11 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "살펴봄 — 근거 기반 중고 구매 판단",
+  title: "BuyWise — 근거 기반 중고 구매 판단",
   description: "중고 스마트폰 캡처를 증거 상태별로 분석하고, 다음 확인 행동을 추천합니다.",
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: "/buywise-favicon.svg",
+    shortcut: "/buywise-favicon.svg",
   },
 };
 

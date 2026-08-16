@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       image_url: { url: `data:${image.type};base64,${Buffer.from(await image.arrayBuffer()).toString("base64")}` },
     })));
 
-    const prompt = `당신은 UsedCheck의 증거 추출기입니다. 먼저 업로드된 사진이 선택된 '${category}' 중고매물의 상위 상품군과 같은지 검증하세요.
+    const prompt = `당신은 BuyWise의 증거 추출기입니다. 먼저 업로드된 사진이 선택된 '${category}' 중고매물의 상위 상품군과 같은지 검증하세요.
 listing_verification은 오직 상위 상품군으로만 판단합니다. 예를 들어 스마트폰 카테고리에서는 아이폰 12, 아이폰 14, 갤럭시 모두 반드시 match입니다. 사진 속 모델·용량·색상이 판매자 설명과 달라도 mismatch로 처리하지 말고, 해당 evidence만 contradictory 또는 uncertain으로 기록하세요.
 사진에 선택 카테고리와 명확히 다른 상품(예: 스마트폰 분석에 헤어 제품 사진)이 보일 때만 listing_verification.status를 mismatch로 반환하세요. 이 경우 나머지 분석 항목은 추측하지 말고 null 또는 missing으로 반환하세요.
 사진이 없거나 사진만으로 상품 종류를 판별하기 어려우면 uncertain, 사진과 카테고리가 일치하면 match를 반환하세요. detected_category에는 사진에서 식별한 상품 종류를 한국어로 짧게 적으세요.

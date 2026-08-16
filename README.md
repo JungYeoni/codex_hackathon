@@ -187,6 +187,7 @@ MVP_PLAN.md               # 제품 방향과 단계별 계획
 - [MVP 계획](./MVP_PLAN.md)
 - [GitHub 저장소](https://github.com/JungYeoni/codex_hackathon)
 - [배포 데모](https://sardine-chi.vercel.app)
+- [대회 제출 자료(PPT·Chat History)](./submission/)
 
 ## 팀 원칙
 
