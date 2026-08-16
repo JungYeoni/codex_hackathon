@@ -74,7 +74,6 @@ BuyWise는 판매자의 말을 사실로 승격하지 않습니다.
 
 ### 다음 작업
 
-- 실제 AI 응답을 화면의 증거 카드에 연결
 - 구매 기준 편집·저장
 - 매물·분석 결과·판매자 답변 저장
 - 실제 룰 엔진과 질문 우선순위 계산
@@ -128,7 +127,11 @@ OPENAI_API_KEY=your-openai-api-key
 OPENAI_MODEL=your-vision-capable-model
 ```
 
-환경변수가 없거나 API 호출에 실패해도 데모 화면은 fallback으로 동작합니다.
+`OPENAI_API_KEY`는 OpenAI Platform API 키이고, `OPENAI_MODEL`은 이미지 입력을 지원하는 모델 ID입니다. 키는 서버에서만 읽으며 브라우저 코드나 `team-frontend/`에 넣지 않습니다.
+
+Vercel에서는 프로젝트의 Environment Variables에 같은 두 값을 `Production`과 `Preview`로 등록하고 Redeploy합니다. 로컬에서는 프로젝트 루트의 `.env.local`을 사용합니다. 환경변수가 없거나 OpenAI API 호출에 실패하면 데모 결과로 fallback합니다.
+
+AI 분석은 2단계 화면의 **`매물 비교 분석하기`** 버튼을 눌렀을 때 매물별로 `/api/analyze`를 호출해 시작됩니다. `전문가 의견 받기`는 현재 실제 AI 호출이 아니라 데모 전문가 패널을 여는 동작입니다.
 
 ## 명령어
 
@@ -151,9 +154,12 @@ app/
 db/                       # Drizzle 연결 및 향후 스키마
 worker/                   # Cloudflare Worker 진입점
 public/                   # 정적 리소스
+team-frontend/            # 퍼블리싱팀 정적 시안·통합 전 핸드오프 공간
 tests/                    # 빌드·렌더링 검증
 MVP_PLAN.md               # 제품 방향과 단계별 계획
 ```
+
+`team-frontend/`는 `.vercelignore`에 등록되어 있어 현재 Vercel 서비스 빌드에 포함되지 않습니다. 퍼블리싱팀은 이 폴더에서 UI를 수정하고, 서비스 반영이 확정된 뒤에만 필요한 부분을 `app/` 또는 `public/`으로 통합합니다. 자세한 규칙은 [`team-frontend/CODEX_HANDOFF.md`](./team-frontend/CODEX_HANDOFF.md)를 참고합니다.
 
 ## 링크
 
