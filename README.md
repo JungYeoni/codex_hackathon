@@ -46,7 +46,7 @@ AI 증거 추출
 - 주요 정보 공백을 영향도 순으로 표시
 - 판매자 질문 Top 3와 안전한 메시지 템플릿 제공
 - 질문 메시지 클립보드 복사
-- OpenAI Vision API 연결
+- RunPod OpenAI-compatible Vision API 연결
 - API 미설정·실패 시 데모 결과 fallback
 
 ## 핵심 안전장치
@@ -69,11 +69,12 @@ BuyWise는 판매자의 말을 사실로 승격하지 않습니다.
 - 증거 카드와 상태 배지
 - 정보 공백·비교 가능성·다음 질문 UI
 - `/api/analyze`의 이미지·텍스트 분석 요청
-- OpenAI 설정이 없을 때의 fallback 처리
+- RunPod 설정이 없을 때의 fallback 처리
 - GitHub Issue Template 및 issue-helper 워크플로
 
 ### 다음 작업
 
+- 실제 AI 응답을 화면의 증거 카드에 연결
 - 구매 기준 편집·저장
 - 매물·분석 결과·판매자 답변 저장
 - 실제 룰 엔진과 질문 우선순위 계산
@@ -90,6 +91,20 @@ BuyWise의 차별점은 “AI가 중고품을 대신 판정한다”가 아닙�
 
 엠버서더 추천은 “이 사용자에게 어떤 선택지가 자주 맞는가”를 설명하고, 증거 분석은 “이 매물에서 실제로 무엇이 확인되는가”를 설명합니다. 둘을 섞지 않는 것이 BuyWise의 원칙입니다.
 
+## Tech Stack
+
+| 영역 | 기술 |
+| --- | --- |
+| Product UI | React 19, TypeScript, Next App Router 호환 구조 |
+| App runtime | Vinext, Vite, Nitro |
+| Styling | CSS 기반 디자인 시스템, 반응형 레이아웃 |
+| AI analysis | RunPod OpenAI-compatible Vision API |
+| API | `app/api/analyze` Route Handler, multipart form-data |
+| Data layer | Drizzle ORM, Cloudflare D1 연동 기반 |
+| Deployment | Cloudflare Workers, Vercel Nitro |
+| Quality | ESLint, Node.js Test Runner |
+| Collaboration | GitHub Actions, reusable issue-helper workflow |
+
 ## 기술 구조
 
 ```text
@@ -97,12 +112,12 @@ React / Next App Router
         │
         ├── app/page.tsx       사용자 분석 화면
         ├── app/api/analyze    이미지·텍스트 분석 API
-        ├── OpenAI              Vision API
+        ├── RunPod              OpenAI-compatible Vision API
         ├── db/                 Drizzle + Cloudflare D1 연결 기반
         └── worker/             Cloudflare Worker 진입점
 ```
 
-분석 요청은 서버에서 OpenAI API로 전달합니다. API 키는 브라우저에 노출하지 않고 서버 환경변수에서만 읽습니다.
+분석 요청은 서버에서 RunPod로 전달합니다. API 키는 브라우저에 노출하지 않고 서버 환경변수에서만 읽습니다.
 
 ## 시작하기
 
@@ -118,20 +133,19 @@ npm install
 npm run dev
 ```
 
-### OpenAI 연결
+### RunPod 연결
 
 `.env.local`에 다음 값을 설정합니다.
 
 ```env
-OPENAI_API_KEY=your-openai-api-key
-OPENAI_MODEL=your-vision-capable-model
+OPENAI_BASE_URL=https://api.runpod.ai/v2/<POD_ID>/openai/v1
+OPENAI_API_KEY=your-runpod-api-key
+OPENAI_MODEL=vision-capable-model
 ```
 
-`OPENAI_API_KEY`는 OpenAI Platform API 키이고, `OPENAI_MODEL`은 이미지 입력을 지원하는 모델 ID입니다. 키는 서버에서만 읽으며 브라우저 코드나 `team-frontend/`에 넣지 않습니다.
+`OPENAI_BASE_URL`에는 `/chat/completions`를 넣지 않습니다. 서버가 자동으로 붙입니다.
 
-Vercel에서는 프로젝트의 Environment Variables에 같은 두 값을 `Production`과 `Preview`로 등록하고 Redeploy합니다. 로컬에서는 프로젝트 루트의 `.env.local`을 사용합니다. 환경변수가 없거나 OpenAI API 호출에 실패하면 데모 결과로 fallback합니다.
-
-AI 분석은 2단계 화면의 **`매물 비교 분석하기`** 버튼을 눌렀을 때 매물별로 `/api/analyze`를 호출해 시작됩니다. `전문가 의견 받기`는 현재 실제 AI 호출이 아니라 데모 전문가 패널을 여는 동작입니다.
+환경변수가 없거나 API 호출에 실패해도 데모 화면은 fallback으로 동작합니다.
 
 ## 명령어
 
@@ -148,18 +162,15 @@ npm test             # 빌드 및 렌더링 테스트
 ```text
 app/
 ├── page.tsx              # BuyWise 메인 화면
-├── api/analyze/route.ts  # OpenAI 분석 API
+├── api/analyze/route.ts  # RunPod 분석 API
 ├── globals.css           # 제품 UI 스타일
 └── layout.tsx            # 전역 메타데이터·레이아웃
 db/                       # Drizzle 연결 및 향후 스키마
 worker/                   # Cloudflare Worker 진입점
 public/                   # 정적 리소스
-team-frontend/            # 퍼블리싱팀 정적 시안·통합 전 핸드오프 공간
 tests/                    # 빌드·렌더링 검증
 MVP_PLAN.md               # 제품 방향과 단계별 계획
 ```
-
-`team-frontend/`는 `.vercelignore`에 등록되어 있어 현재 Vercel 서비스 빌드에 포함되지 않습니다. 퍼블리싱팀은 이 폴더에서 UI를 수정하고, 서비스 반영이 확정된 뒤에만 필요한 부분을 `app/` 또는 `public/`으로 통합합니다. 자세한 규칙은 [`team-frontend/CODEX_HANDOFF.md`](./team-frontend/CODEX_HANDOFF.md)를 참고합니다.
 
 ## 링크
 
