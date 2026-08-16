@@ -19,6 +19,14 @@ test("calculates gaps and seller questions from returned evidence", async () => 
   assert.match(page, /navigator\.clipboard\.writeText/);
 });
 
+test("shows extracted listing details instead of the comparison demo card", async () => {
+  const page = await readFile(new URL("app/page.tsx", root), "utf8");
+  assert.match(page, /analysis\.title/);
+  assert.match(page, /analysis\.priceText/);
+  assert.match(page, /배터리 성능\\s\*\(\\d\+\)%/);
+  assert.match(page, /batteryBelowRequirement/);
+});
+
 test("validates analysis uploads on the server", async () => {
   const route = await readFile(new URL("app/api/analyze/route.ts", root), "utf8");
   assert.match(route, /MAX_IMAGE_BYTES/);
