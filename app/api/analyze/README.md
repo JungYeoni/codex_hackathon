@@ -1,6 +1,6 @@
 # `app/api/analyze/`
 
-RunPod OpenAI-compatible Vision API를 호출해 캡처 이미지와 판매자 설명을 Evidence JSON으로 변환합니다.
+OpenAI Vision API를 호출해 캡처 이미지와 판매자 설명을 Evidence JSON으로 변환합니다.
 
 ## 처리 순서
 

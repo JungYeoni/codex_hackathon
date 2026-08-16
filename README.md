@@ -46,7 +46,7 @@ AI 증거 추출
 - 주요 정보 공백을 영향도 순으로 표시
 - 판매자 질문 Top 3와 안전한 메시지 템플릿 제공
 - 질문 메시지 클립보드 복사
-- RunPod OpenAI-compatible Vision API 연결
+- OpenAI Vision API 연결
 - API 미설정·실패 시 데모 결과 fallback
 
 ## 핵심 안전장치
@@ -69,7 +69,7 @@ BuyWise는 판매자의 말을 사실로 승격하지 않습니다.
 - 증거 카드와 상태 배지
 - 정보 공백·비교 가능성·다음 질문 UI
 - `/api/analyze`의 이미지·텍스트 분석 요청
-- RunPod 설정이 없을 때의 fallback 처리
+- OpenAI 설정이 없을 때의 fallback 처리
 - GitHub Issue Template 및 issue-helper 워크플로
 
 ### 다음 작업
@@ -98,12 +98,12 @@ React / Next App Router
         │
         ├── app/page.tsx       사용자 분석 화면
         ├── app/api/analyze    이미지·텍스트 분석 API
-        ├── RunPod              OpenAI-compatible Vision API
+        ├── OpenAI              Vision API
         ├── db/                 Drizzle + Cloudflare D1 연결 기반
         └── worker/             Cloudflare Worker 진입점
 ```
 
-분석 요청은 서버에서 RunPod로 전달합니다. API 키는 브라우저에 노출하지 않고 서버 환경변수에서만 읽습니다.
+분석 요청은 서버에서 OpenAI API로 전달합니다. API 키는 브라우저에 노출하지 않고 서버 환경변수에서만 읽습니다.
 
 ## 시작하기
 
@@ -119,17 +119,14 @@ npm install
 npm run dev
 ```
 
-### RunPod 연결
+### OpenAI 연결
 
 `.env.local`에 다음 값을 설정합니다.
 
 ```env
-OPENAI_BASE_URL=https://api.runpod.ai/v2/<POD_ID>/openai/v1
-OPENAI_API_KEY=your-runpod-api-key
-OPENAI_MODEL=vision-capable-model
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=your-vision-capable-model
 ```
-
-`OPENAI_BASE_URL`에는 `/chat/completions`를 넣지 않습니다. 서버가 자동으로 붙입니다.
 
 환경변수가 없거나 API 호출에 실패해도 데모 화면은 fallback으로 동작합니다.
 
@@ -148,7 +145,7 @@ npm test             # 빌드 및 렌더링 테스트
 ```text
 app/
 ├── page.tsx              # BuyWise 메인 화면
-├── api/analyze/route.ts  # RunPod 분석 API
+├── api/analyze/route.ts  # OpenAI 분석 API
 ├── globals.css           # 제품 UI 스타일
 └── layout.tsx            # 전역 메타데이터·레이아웃
 db/                       # Drizzle 연결 및 향후 스키마

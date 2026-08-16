@@ -22,8 +22,9 @@ const schema = {
 const MAX_IMAGES = 10;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
-const requiredEnvironmentKeys = ["OPENAI_BASE_URL", "OPENAI_API_KEY", "OPENAI_MODEL"] as const;
+const requiredEnvironmentKeys = ["OPENAI_API_KEY", "OPENAI_MODEL"] as const;
 
 function missingEnvironmentKeys() {
   return requiredEnvironmentKeys.filter((key) => !process.env[key]?.trim());
@@ -66,8 +67,7 @@ export async function POST(request: Request) {
 사용자 구매 기준: ${criteria || "(없음)"}
 판매자 설명: ${description || "(없음)"}`;
 
-    const endpoint = `${process.env.OPENAI_BASE_URL!.replace(/\/$/, "")}/chat/completions`;
-    const response = await fetch(endpoint, {
+    const response = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
       body: JSON.stringify({
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) {
-      return NextResponse.json({ configured: true, fallback: true, message: `RunPod 분석 요청 실패 (${response.status})` });
+      return NextResponse.json({ configured: true, fallback: true, message: `OpenAI 분석 요청 실패 (${response.status})` });
     }
 
     const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };

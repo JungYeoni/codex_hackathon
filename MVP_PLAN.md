@@ -38,7 +38,7 @@ UsedCheck는 이 작업을 “정보 추출 → 증거 상태 판정 → 공백 
 - 캡처 이미지 여러 장 업로드
 - 판매자 설명 붙여넣기
 - 당근·번개장터·기타 플랫폼 선택
-- RunPod OpenAI-compatible API를 통한 실제 이미지·텍스트 분석
+- OpenAI API를 통한 실제 이미지·텍스트 분석
 - API 미설정 또는 실패 시 데모 데이터 fallback
 
 ### 증거 스키마
@@ -192,8 +192,8 @@ MVP에서는 엠버서더 플랫폼 전체를 만들지 않는다.
 
 - 프론트엔드: 구매 기준, 캡처 업로드, 증거 카드, 비교표, 질문 생성
 - 분석 API: `/api/analyze`
-- 모델 연결: RunPod OpenAI-compatible `/chat/completions`
-- 환경변수: `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`
+- 모델 연결: OpenAI `/v1/chat/completions`
+- 환경변수: `OPENAI_API_KEY`, `OPENAI_MODEL`
 - 룰 엔진: 상태값 검증, 공백·비교 가능성·질문 우선순위 계산
 - 큐레이션 레이어: 운영자가 관리하는 추천 카드와 사용자 피드백
 - 저장소: MVP에서는 로컬 데모로 시작하고, 이후 D1에 매물·증거·큐레이션·피드백 저장
@@ -206,7 +206,7 @@ MVP에서는 엠버서더 플랫폼 전체를 만들지 않는다.
 - 증거 상태값과 출처 표시
 - 비교 보류
 - 질문 Top 3
-- RunPod 실제 AI 연동
+- OpenAI 실제 AI 연동
 - 운영자 시드 큐레이션 카드 5~10개
 
 ### Phase 2 — 큐레이션 검증
