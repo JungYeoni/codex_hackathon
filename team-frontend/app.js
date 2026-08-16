@@ -1,3 +1,13 @@
+const buywiseFavicon = document.createElement('link');
+buywiseFavicon.rel = 'icon';
+buywiseFavicon.type = 'image/svg+xml';
+buywiseFavicon.href = './favicon.svg';
+document.head.append(buywiseFavicon);
+document.querySelectorAll('.brand').forEach(brand => {
+  brand.innerHTML = '<img class="brand-logo" src="./buywise-logo.svg" alt="BuyWise" />';
+  brand.setAttribute('aria-label', 'BuyWise 홈');
+});
+
 const questions = [
   ['01 · 필수 조건', '배터리 성능(최대 용량) 화면을 캡처해서 보내주실 수 있을까요?'],
   ['02 · 위험 확인', '침수나 사설 수리, 부품 교체 이력이 있었는지 궁금합니다.'],
