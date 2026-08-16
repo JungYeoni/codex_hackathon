@@ -60,6 +60,16 @@ function getPreview(file: File) { return URL.createObjectURL(file); }
 
 const replyStatusText: Record<string, string> = { verified: "확인됨", seller_claim: "판매자 설명", uncertain: "부분 확인", contradictory: "위험 신호" };
 
+function fallbackSellerReplyResult(reply: string): Record<string, unknown> {
+  const evidence: Array<{ field: string; value: string; status: string; reason: string }> = [];
+  const battery = reply.match(/(?:배터리|최대 ?용량|성능)[^\d]{0,12}(\d{2,3})\s*%/i);
+  if (battery) evidence.push({ field: "battery_health", value: `${battery[1]}%`, status: "seller_claim", reason: "판매자 답변에 배터리 수치가 포함되어 있어요." });
+  if (/(수리|부품 교체)[^。.!\n]{0,12}(없|안 했|없었)/.test(reply)) evidence.push({ field: "repair_history", value: "없음", status: "seller_claim", reason: "판매자가 수리·부품 교체 이력이 없다고 답변했어요." });
+  if (/(침수|물에 빠|액체)[^。.!\n]{0,12}(없|안 됐|없었)/.test(reply)) evidence.push({ field: "water_damage", value: "없음", status: "seller_claim", reason: "판매자가 침수 이력이 없다고 답변했어요." });
+  if (/(카메라|충전|스피커|터치)[^。.!\n]{0,15}(정상|가능|돼요|됩니다|확인)/.test(reply)) evidence.push({ field: "speaker_microphone", value: "기능 확인 가능", status: "seller_claim", reason: "판매자 답변에 기능 확인 또는 정상 작동 관련 내용이 있어요." });
+  return { summary: evidence.length ? `판매자 답변에서 ${evidence.length}개 항목을 확인했어요. 판매자 주장인 만큼 직거래에서 증빙을 추가로 확인하세요.` : "판매자 답변에서 구매 판단에 사용할 수 있는 구체적인 정보를 찾지 못했어요.", evidence };
+}
+
 function mergeSellerReply(analysis: Analysis, result: Record<string, unknown> | undefined, reply: string): Analysis {
   const evidence = Array.isArray(result?.evidence) ? result.evidence as Array<{ field?: string; value?: string; status?: string; reason?: string }> : [];
   const replyFields = new Map(evidence.map((item) => [item.field, item]));
@@ -166,8 +176,9 @@ export default function Home() {
     try {
       const response = await fetch("/api/analyze", { method: "POST", body: form });
       const payload = await response.json() as { result?: Record<string, unknown>; fallback?: boolean; message?: string };
-      setAnalyses((current) => current.map((analysis) => mergeSellerReply(analysis, payload.result, sellerReply)));
-      showToast(payload.fallback ? "분석에 실패해 답변을 반영하지 못했어요." : "판매자 답변을 분석해 구매 적합도를 다시 계산했어요.");
+      const replyResult = payload.result ?? fallbackSellerReplyResult(sellerReply);
+      setAnalyses((current) => current.map((analysis) => mergeSellerReply(analysis, replyResult, sellerReply)));
+      showToast(payload.fallback ? "AI 연결 없이 답변을 규칙 기반으로 반영했어요." : "판매자 답변을 분석해 구매 적합도를 다시 계산했어요.");
     } catch {
       showToast("판매자 답변 분석에 연결할 수 없어요.");
     } finally {
