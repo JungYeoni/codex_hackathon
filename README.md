@@ -4,6 +4,16 @@
 
 <p align="center"><strong>확인 가능한 매물을 고르는 중고거래 도우미</strong></p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-20232A?logo=react&logoColor=61DAFB" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Vinext-Next_compatible-17251E" alt="Vinext" />
+  <img src="https://img.shields.io/badge/RunPod-Vision_API-6C47FF" alt="RunPod" />
+  <img src="https://img.shields.io/badge/Drizzle-ORM-C5F74F?logo=drizzle&logoColor=111" alt="Drizzle ORM" />
+  <img src="https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white" alt="Cloudflare Workers" />
+  <img src="https://img.shields.io/badge/Vercel-Nitro-000000?logo=vercel&logoColor=white" alt="Vercel Nitro" />
+</p>
+
 ## 중고거래, 이제 “좋아 보이는 매물” 말고 “확인 가능한 매물”을 고르세요.
 
 BuyWise는 중고 스마트폰 판매글의 캡처와 판매자 설명을 분석해 **확인된 정보, 판매자 주장, 추정, 정보 공백**을 나눠 보여주는 증거 기반 구매 도우미입니다.
