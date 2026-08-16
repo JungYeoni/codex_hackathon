@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 const schema = {
+  extracted_description: "string",
   model: "string",
   storage: "string|null",
   price: "number|null",
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
 그 다음 ${category} 중고매물의 사진과 판매자 설명에서 확인 가능한 후보를 구조화하세요.
 상태값은 verified(사진/증빙에서 명확히 확인), seller_claim(판매자 설명에만 있음), inferred(AI 추정), missing(정보 없음), uncertain(사진이 불명확), contradictory(사진과 설명 충돌) 중 하나만 사용하세요.
 사진만으로 배터리 성능, 수리 이력, 침수 여부, 터치/카메라 기능 정상을 확정하지 마세요. 각 결과에 image_N 또는 description 출처와 짧은 reason을 포함하세요. 정보가 없으면 null과 missing을 반환하세요.
+사진 속 판매글에 보이는 제목, 가격, 상품 설명, 상태, 구성품, 거래 조건 등의 텍스트를 읽어 extracted_description에 자연스러운 한국어 문장으로 정리하세요. 판매자 설명 입력이 비어 있어도 사진에서 읽은 텍스트만으로 작성하고, 사진에서 판매글 문구를 읽을 수 없으면 빈 문자열을 반환하세요. 이미지에 없는 내용을 추측해서 추가하지 마세요.
 다음 JSON 객체만 반환하세요. 스키마: ${JSON.stringify(schema)}
 사용자 구매 기준: ${criteria || "(없음)"}
 판매자 설명: ${description || "(없음)"}`;
