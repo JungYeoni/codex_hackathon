@@ -32,6 +32,19 @@ function configured() {
   return Boolean(process.env.OPENAI_BASE_URL && process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL);
 }
 
+const allowedStatuses = new Set(["verified", "seller_claim", "inferred", "missing", "uncertain", "contradictory"]);
+
+function isValidAnalysisResult(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== "object") return false;
+  const result = value as Record<string, unknown>;
+  if (!Array.isArray(result.evidence) || result.evidence.length < 3) return false;
+  return result.evidence.every((item) => {
+    if (!item || typeof item !== "object") return false;
+    const evidence = item as Record<string, unknown>;
+    return typeof evidence.field === "string" && allowedStatuses.has(String(evidence.status));
+  });
+}
+
 export async function POST(request: Request) {
   if (!configured()) {
     return NextResponse.json({
@@ -81,7 +94,11 @@ listing_extraction에는 상품 제목, 가격(숫자), 플랫폼명, 판매자�
     const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
     const content = payload.choices?.[0]?.message?.content;
     if (!content) throw new Error("No model content");
-    return NextResponse.json({ configured: true, fallback: false, result: JSON.parse(content) });
+    const result = JSON.parse(content) as unknown;
+    if (!isValidAnalysisResult(result)) {
+      return NextResponse.json({ configured: true, fallback: true, analysis_valid: false, message: "AI 응답의 증거 항목이 부족해 분석을 보류합니다." });
+    }
+    return NextResponse.json({ configured: true, fallback: false, analysis_valid: true, result });
   } catch (error) {
     console.error("analysis_failed", error instanceof Error ? error.message : "unknown_error");
     return NextResponse.json({ configured: true, fallback: true, message: "분석 중 오류가 발생해 데모 결과를 유지합니다." });

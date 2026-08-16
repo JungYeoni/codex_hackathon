@@ -22,7 +22,7 @@ const defaultChecks: Array<[string, string, string]> = [
 ];
 
 function analysisFromResult(result: Record<string, unknown> | undefined, criteria: string): Analysis {
-  if (!result) return { score: 76, decision: "조건부 추천", description: "핵심 조건은 대체로 맞지만, 구매 전 꼭 확인할 정보가 남아 있어요.", checks: defaultChecks, questions: defaultQuestions };
+  if (!result) return { score: 0, decision: "분석 보류", description: "AI가 유효한 증거 항목을 충분히 반환하지 못해 구매 판단을 보류했어요. 캡처를 다시 올리거나 설명을 보완해 주세요.", checks: [["AI 분석 상태", "분석 보류", "유효한 증거 항목이 부족해 점수를 계산하지 않았어요."]], questions: defaultQuestions };
   const extraction = (result.listing_extraction ?? undefined) as ListingExtraction | undefined;
   const evidence = Array.isArray(result.evidence) ? result.evidence as Array<{ field?: string; value?: string; status?: string; reason?: string }> : [];
   const statusText: Record<string, string> = { verified: "확인됨", seller_claim: "판매자 설명", inferred: "부분 확인", missing: "미확인", uncertain: "부분 확인", contradictory: "위험 신호" };
