@@ -19,6 +19,10 @@ const schema = {
   evidence: "array of {field,value,status,source,reason}",
 };
 
+const MAX_IMAGES = 10;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
 function configured() {
   return Boolean(process.env.OPENAI_BASE_URL && process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL);
 }
@@ -36,7 +40,14 @@ export async function POST(request: Request) {
     const category = String(form.get("category") ?? "스마트폰");
     const criteria = String(form.get("criteria") ?? "");
     const description = String(form.get("description") ?? "");
-    const images = form.getAll("images").filter((value): value is File => value instanceof File).slice(0, 10);
+    const images = form.getAll("images").filter((value): value is File => value instanceof File).slice(0, MAX_IMAGES);
+    if (!images.length && !description.trim()) {
+      return NextResponse.json({ message: "판매글 설명 또는 이미지가 필요합니다." }, { status: 400 });
+    }
+    const invalidImage = images.find((image) => !SUPPORTED_IMAGE_TYPES.has(image.type) || image.size > MAX_IMAGE_BYTES);
+    if (invalidImage) {
+      return NextResponse.json({ message: "이미지는 JPG, PNG, WEBP 형식의 10MB 이하 파일만 지원합니다." }, { status: 400 });
+    }
     const imageParts = await Promise.all(images.map(async (image) => ({
       type: "image_url",
       image_url: { url: `data:${image.type};base64,${Buffer.from(await image.arrayBuffer()).toString("base64")}` },
@@ -68,7 +79,11 @@ export async function POST(request: Request) {
     const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
     const content = payload.choices?.[0]?.message?.content;
     if (!content) throw new Error("No model content");
-    return NextResponse.json({ configured: true, fallback: false, result: JSON.parse(content) });
+    const result: unknown = JSON.parse(content);
+    if (!result || typeof result !== "object" || Array.isArray(result)) {
+      throw new Error("Invalid model response");
+    }
+    return NextResponse.json({ configured: true, fallback: false, result });
   } catch (error) {
     console.error("analysis_failed", error instanceof Error ? error.message : "unknown_error");
     return NextResponse.json({ configured: true, fallback: true, message: "분석 중 오류가 발생해 데모 결과를 유지합니다." });
