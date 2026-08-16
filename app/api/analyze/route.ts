@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 
 const schema = {
+  listing_extraction: {
+    title: "string|null",
+    price: "number|null",
+    platform: "string|null",
+    seller_description: "string|null",
+    extracted_text: "string|null",
+    product_images: "array of {image_source,description}",
+    extraction_notes: "array of string",
+  },
   model: "string",
   storage: "string|null",
   price: "number|null",
@@ -42,7 +51,11 @@ export async function POST(request: Request) {
       image_url: { url: `data:${image.type};base64,${Buffer.from(await image.arrayBuffer()).toString("base64")}` },
     })));
 
-    const prompt = `당신은 UsedCheck의 증거 추출기입니다. ${category} 중고매물의 사진과 판매자 설명에서 확인 가능한 후보를 구조화하세요.
+    const prompt = `당신은 UsedCheck의 중고 매물 캡처 구조화기이자 증거 추출기입니다. ${category} 중고매물의 캡처 이미지와 판매자 설명을 분석하세요.
+먼저 캡처 안에 포함된 판매글 텍스트를 OCR처럼 읽어 listing_extraction에 구조화하세요.
+listing_extraction에는 상품 제목, 가격(숫자), 플랫폼명, 판매자가 작성한 본문, 캡처에서 읽은 전체 텍스트, 상품 사진으로 보이는 이미지의 설명을 넣으세요.
+캡처에 판매글 텍스트와 상품 사진이 함께 있으면 둘을 분리해서 기록하세요. 읽을 수 없는 글자는 추측하지 말고 extracted_text에 가능한 부분만 넣고 extraction_notes에 '일부 텍스트 판독 불가'를 기록하세요.
+사용자가 별도로 제공한 판매자 설명은 seller_description에 우선 반영하되, 캡처 OCR 결과와 다르면 둘 다 보존하고 extraction_notes에 충돌을 기록하세요.
 상태값은 verified(사진/증빙에서 명확히 확인), seller_claim(판매자 설명에만 있음), inferred(AI 추정), missing(정보 없음), uncertain(사진이 불명확), contradictory(사진과 설명 충돌) 중 하나만 사용하세요.
 사진만으로 배터리 성능, 수리 이력, 침수 여부, 터치/카메라 기능 정상을 확정하지 마세요. 각 결과에 image_N 또는 description 출처와 짧은 reason을 포함하세요. 정보가 없으면 null과 missing을 반환하세요.
 다음 JSON 객체만 반환하세요. 스키마: ${JSON.stringify(schema)}
