@@ -13,11 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "usedcheck — 근거 있게 고르는 중고거래",
+  title: "BuyWise — 근거 있게 고르는 중고거래",
   description: "중고 스마트폰 캡처를 증거 상태별로 분석하고, 다음 확인 행동을 추천합니다.",
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: "/favicorn.svg",
+    shortcut: "/favicorn.svg",
   },
 };
 
