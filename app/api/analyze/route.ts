@@ -23,15 +23,21 @@ const MAX_IMAGES = 10;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-function configured() {
-  return Boolean(process.env.OPENAI_BASE_URL && process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL);
+const requiredEnvironmentKeys = ["OPENAI_BASE_URL", "OPENAI_API_KEY", "OPENAI_MODEL"] as const;
+
+function missingEnvironmentKeys() {
+  return requiredEnvironmentKeys.filter((key) => !process.env[key]?.trim());
 }
 
 export async function POST(request: Request) {
-  if (!configured()) {
+  const missing = missingEnvironmentKeys();
+  if (missing.length) {
+    console.error("analysis_not_configured", { missing });
     return NextResponse.json({
       configured: false,
-      message: "RunPod 설정 전입니다. 데모 결과를 사용합니다.",
+      fallback: true,
+      missing,
+      message: `분석 환경변수가 누락되었습니다: ${missing.join(", ")}`,
     });
   }
 
