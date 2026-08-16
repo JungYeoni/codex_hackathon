@@ -25,3 +25,13 @@ test("validates analysis uploads on the server", async () => {
   assert.match(route, /SUPPORTED_IMAGE_TYPES/);
   assert.match(route, /판매글 설명 또는 이미지가 필요합니다/);
 });
+
+test("stops analysis when the vision result conflicts with the selected category", async () => {
+  const route = await readFile(new URL("app/api/analyze/route.ts", root), "utf8");
+  const page = await readFile(new URL("app/page.tsx", root), "utf8");
+  assert.match(route, /listing_verification/);
+  assert.match(route, /invalidListing: true/);
+  assert.match(route, /hasVerificationStatus/);
+  assert.match(route, /verification\?\.status === "mismatch"/);
+  assert.match(page, /payload\.invalidListing/);
+});

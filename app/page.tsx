@@ -68,7 +68,12 @@ export default function Home() {
       listing.files.forEach((file) => form.append("images", file));
       try {
         const response = await fetch("/api/analyze", { method: "POST", body: form });
-        const payload = await response.json() as { result?: Record<string, unknown>; fallback?: boolean; message?: string; missing?: string[] };
+        const payload = await response.json() as { result?: Record<string, unknown>; fallback?: boolean; invalidListing?: boolean; message?: string; missing?: string[] };
+        if (payload.invalidListing) {
+          setIsAnalyzing(false);
+          showToast(payload.message ?? "업로드한 사진과 선택한 카테고리가 달라 분석할 수 없어요.");
+          return;
+        }
         if (payload.fallback) {
           showToast(payload.message ?? `분석 설정을 확인해주세요${payload.missing?.length ? `: ${payload.missing.join(", ")}` : ""}`);
         }

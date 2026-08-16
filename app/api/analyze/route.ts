@@ -16,6 +16,7 @@ const schema = {
   water_damage: "string|null",
   accessories: "string|null",
   warranty: "string|null",
+  listing_verification: "{status: match|mismatch|uncertain, detected_category: string|null, reason: string}",
   evidence: "array of {field,value,status,source,reason}",
 };
 
@@ -60,7 +61,10 @@ export async function POST(request: Request) {
       image_url: { url: `data:${image.type};base64,${Buffer.from(await image.arrayBuffer()).toString("base64")}` },
     })));
 
-    const prompt = `당신은 UsedCheck의 증거 추출기입니다. ${category} 중고매물의 사진과 판매자 설명에서 확인 가능한 후보를 구조화하세요.
+    const prompt = `당신은 UsedCheck의 증거 추출기입니다. 먼저 업로드된 사진이 선택된 '${category}' 중고매물과 같은 상품인지 검증하세요.
+사진에 선택 카테고리와 명확히 다른 상품(예: 스마트폰 분석에 헤어 제품 사진)이 보이면 listing_verification.status를 반드시 mismatch로 반환하세요. 이 경우 나머지 분석 항목은 추측하지 말고 null 또는 missing으로 반환하세요.
+사진이 없거나 사진만으로 상품 종류를 판별하기 어려우면 uncertain, 사진과 카테고리가 일치하면 match를 반환하세요. detected_category에는 사진에서 식별한 상품 종류를 한국어로 짧게 적으세요.
+그 다음 ${category} 중고매물의 사진과 판매자 설명에서 확인 가능한 후보를 구조화하세요.
 상태값은 verified(사진/증빙에서 명확히 확인), seller_claim(판매자 설명에만 있음), inferred(AI 추정), missing(정보 없음), uncertain(사진이 불명확), contradictory(사진과 설명 충돌) 중 하나만 사용하세요.
 사진만으로 배터리 성능, 수리 이력, 침수 여부, 터치/카메라 기능 정상을 확정하지 마세요. 각 결과에 image_N 또는 description 출처와 짧은 reason을 포함하세요. 정보가 없으면 null과 missing을 반환하세요.
 다음 JSON 객체만 반환하세요. 스키마: ${JSON.stringify(schema)}
@@ -88,6 +92,31 @@ export async function POST(request: Request) {
     const result: unknown = JSON.parse(content);
     if (!result || typeof result !== "object" || Array.isArray(result)) {
       throw new Error("Invalid model response");
+    }
+    const verification = (result as { listing_verification?: { status?: unknown; detected_category?: unknown; reason?: unknown } }).listing_verification;
+    const hasVerificationStatus = verification?.status === "match" || verification?.status === "mismatch" || verification?.status === "uncertain";
+    if (images.length && !hasVerificationStatus) {
+      return NextResponse.json({
+        configured: true,
+        fallback: false,
+        invalidListing: true,
+        message: "사진과 선택 카테고리의 일치 여부를 확인하지 못했습니다. 사진을 다시 올려주세요.",
+      });
+    }
+    if (images.length && verification?.status === "mismatch") {
+      const detectedCategory = typeof verification.detected_category === "string" && verification.detected_category.trim()
+        ? `사진에서는 '${verification.detected_category.trim()}'(으)로 보입니다. `
+        : "";
+      const reason = typeof verification.reason === "string" && verification.reason.trim()
+        ? verification.reason.trim()
+        : "선택한 카테고리와 다른 상품이 사진에서 확인됐습니다.";
+      return NextResponse.json({
+        configured: true,
+        fallback: false,
+        invalidListing: true,
+        message: `${detectedCategory}${reason} '${category}' 매물로는 분석할 수 없습니다.`,
+        verification,
+      });
     }
     return NextResponse.json({ configured: true, fallback: false, result });
   } catch (error) {
