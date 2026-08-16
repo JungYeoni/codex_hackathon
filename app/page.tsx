@@ -68,7 +68,10 @@ export default function Home() {
       listing.files.forEach((file) => form.append("images", file));
       try {
         const response = await fetch("/api/analyze", { method: "POST", body: form });
-        const payload = await response.json() as { result?: Record<string, unknown>; fallback?: boolean };
+        const payload = await response.json() as { result?: Record<string, unknown>; fallback?: boolean; message?: string; missing?: string[] };
+        if (payload.fallback) {
+          showToast(payload.message ?? `분석 설정을 확인해주세요${payload.missing?.length ? `: ${payload.missing.join(", ")}` : ""}`);
+        }
         next.push(analysisFromResult(payload.result, criteria));
       } catch {
         next.push(analysisFromResult(undefined, criteria));
