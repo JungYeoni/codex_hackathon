@@ -33,6 +33,8 @@ export async function POST(request: Request) {
 
   try {
     const form = await request.formData();
+    const category = String(form.get("category") ?? "스마트폰");
+    const criteria = String(form.get("criteria") ?? "");
     const description = String(form.get("description") ?? "");
     const images = form.getAll("images").filter((value): value is File => value instanceof File).slice(0, 10);
     const imageParts = await Promise.all(images.map(async (image) => ({
@@ -40,10 +42,11 @@ export async function POST(request: Request) {
       image_url: { url: `data:${image.type};base64,${Buffer.from(await image.arrayBuffer()).toString("base64")}` },
     })));
 
-    const prompt = `당신은 UsedCheck의 증거 추출기입니다. 스마트폰 중고매물의 사진과 판매자 설명에서 확인 가능한 후보를 구조화하세요.
+    const prompt = `당신은 UsedCheck의 증거 추출기입니다. ${category} 중고매물의 사진과 판매자 설명에서 확인 가능한 후보를 구조화하세요.
 상태값은 verified(사진/증빙에서 명확히 확인), seller_claim(판매자 설명에만 있음), inferred(AI 추정), missing(정보 없음), uncertain(사진이 불명확), contradictory(사진과 설명 충돌) 중 하나만 사용하세요.
 사진만으로 배터리 성능, 수리 이력, 침수 여부, 터치/카메라 기능 정상을 확정하지 마세요. 각 결과에 image_N 또는 description 출처와 짧은 reason을 포함하세요. 정보가 없으면 null과 missing을 반환하세요.
 다음 JSON 객체만 반환하세요. 스키마: ${JSON.stringify(schema)}
+사용자 구매 기준: ${criteria || "(없음)"}
 판매자 설명: ${description || "(없음)"}`;
 
     const endpoint = `${process.env.OPENAI_BASE_URL!.replace(/\/$/, "")}/chat/completions`;
