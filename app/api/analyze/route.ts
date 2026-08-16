@@ -21,6 +21,11 @@ const schema = {
   evidence: "array of {field,value,status,source,reason}",
 };
 
+const replySchema = {
+  summary: "string",
+  evidence: "array of {field,value,status,reason}",
+};
+
 const MAX_IMAGES = 10;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -49,7 +54,33 @@ export async function POST(request: Request) {
     const category = String(form.get("category") ?? "스마트폰");
     const criteria = String(form.get("criteria") ?? "");
     const description = String(form.get("description") ?? "");
+    const mode = String(form.get("mode") ?? "listing");
+    const sellerReply = String(form.get("reply") ?? "");
     const images = form.getAll("images").filter((value): value is File => value instanceof File).slice(0, MAX_IMAGES);
+    if (mode === "reply") {
+      if (!sellerReply.trim()) return NextResponse.json({ message: "판매자 답변이 필요합니다." }, { status: 400 });
+      const replyPrompt = `당신은 BuyWise의 판매자 답변 검증기입니다. 판매자의 답변에서 구매 판단에 영향을 주는 사실만 추출하세요.
+구매 기준: ${criteria || "없음"}
+답변: ${sellerReply}
+각 항목의 상태는 verified(답변에 명시됨), seller_claim(판매자가 주장했지만 증빙 없음), uncertain(답변이 모호함), contradictory(기존 정보와 충돌 가능) 중 하나만 사용하세요.
+배터리 성능, 수리 이력, 침수 여부, 카메라·충전·스피커·터치 기능은 답변에 명시된 경우에만 반영하고, 판매자 말만으로 객관적 사실로 확정하지 마세요.
+다음 JSON 객체만 반환하세요. 스키마: ${JSON.stringify(replySchema)}`;
+      const replyResponse = await fetch(OPENAI_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+        body: JSON.stringify({
+          model: process.env.OPENAI_MODEL,
+          temperature: 0.1,
+          response_format: { type: "json_object" },
+          messages: [{ role: "user", content: replyPrompt }],
+        }),
+      });
+      if (!replyResponse.ok) return NextResponse.json({ configured: true, fallback: true, message: `판매자 답변 분석 실패 (${replyResponse.status})` });
+      const replyPayload = await replyResponse.json() as { choices?: Array<{ message?: { content?: string } }> };
+      const replyContent = replyPayload.choices?.[0]?.message?.content;
+      if (!replyContent) throw new Error("No seller reply content");
+      return NextResponse.json({ configured: true, fallback: false, result: JSON.parse(replyContent) });
+    }
     if (!images.length && !description.trim()) {
       return NextResponse.json({ message: "판매글 설명 또는 이미지가 필요합니다." }, { status: 400 });
     }

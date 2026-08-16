@@ -58,6 +58,29 @@ function analysisFromResult(result: Record<string, unknown> | undefined, criteri
 
 function getPreview(file: File) { return URL.createObjectURL(file); }
 
+const replyStatusText: Record<string, string> = { verified: "확인됨", seller_claim: "판매자 설명", uncertain: "부분 확인", contradictory: "위험 신호" };
+
+function mergeSellerReply(analysis: Analysis, result: Record<string, unknown> | undefined, reply: string): Analysis {
+  const evidence = Array.isArray(result?.evidence) ? result.evidence as Array<{ field?: string; value?: string; status?: string; reason?: string }> : [];
+  const replyFields = new Map(evidence.map((item) => [item.field, item]));
+  const checks = analysis.checks.map(([label, status, detail]) => {
+    const field = Object.entries(fieldLabels).find(([, fieldLabel]) => fieldLabel === label)?.[0];
+    const item = field ? replyFields.get(field) : undefined;
+    return item ? [label, replyStatusText[item.status ?? "uncertain"] ?? "부분 확인", `판매자 답변: ${item.reason ?? item.value ?? reply.slice(0, 70)}`] as [string, string, string] : [label, status, detail];
+  });
+  const verifiedCount = evidence.filter((item) => item.status === "verified" || item.status === "seller_claim").length;
+  const unresolvedCount = evidence.filter((item) => item.status === "uncertain" || item.status === "contradictory").length;
+  const score = Math.max(48, Math.min(97, analysis.score + Math.min(20, verifiedCount * 6) - unresolvedCount * 2));
+  return {
+    ...analysis,
+    score,
+    decision: score >= 82 && unresolvedCount === 0 ? "추천" : "조건부 추천",
+    description: result?.summary && typeof result.summary === "string" ? result.summary : "판매자 답변을 분석해 확인 가능한 항목을 갱신했어요. 남은 위험 요소는 구매 전에 직접 점검해보세요.",
+    checks,
+    result: { ...(analysis.result ?? {}), seller_reply: reply, seller_reply_evidence: evidence },
+  };
+}
+
 export default function Home() {
   const [step, setStep] = useState<Step>(1);
   const [category, setCategory] = useState("스마트폰");
@@ -133,10 +156,23 @@ export default function Home() {
     showToast("매물 분석이 완료됐어요.");
   }
 
-  function applySellerReply() {
+  async function applySellerReply() {
     if (!sellerReply.trim()) { showToast("판매자 답변을 먼저 입력해주세요."); return; }
-    setAnalyses((current) => current.map((analysis) => ({ ...analysis, score: Math.min(97, analysis.score + 13), decision: "추천", description: "판매자 답변을 반영했어요. 직거래에서 기능만 마지막으로 점검해보세요.", checks: analysis.checks.map((check, index) => index > 2 ? [check[0], "확인됨", `판매자 답변: ${sellerReply.slice(0, 70)}`] : check) as Array<[string, string, string]> })));
-    showToast("판매자 답변을 반영해 구매 적합도가 올라갔어요.");
+    setIsAnalyzing(true);
+    const form = new FormData();
+    form.append("mode", "reply");
+    form.append("criteria", criteria);
+    form.append("reply", sellerReply);
+    try {
+      const response = await fetch("/api/analyze", { method: "POST", body: form });
+      const payload = await response.json() as { result?: Record<string, unknown>; fallback?: boolean; message?: string };
+      setAnalyses((current) => current.map((analysis) => mergeSellerReply(analysis, payload.result, sellerReply)));
+      showToast(payload.fallback ? "분석에 실패해 답변을 반영하지 못했어요." : "판매자 답변을 분석해 구매 적합도를 다시 계산했어요.");
+    } catch {
+      showToast("판매자 답변 분석에 연결할 수 없어요.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   }
 
   async function copyQuestions() { try { await navigator.clipboard.writeText(firstAnalysis.questions.join("\n\n")); showToast("판매자에게 보낼 질문을 복사했어요."); } catch { showToast("질문을 선택해서 복사해주세요."); } }
