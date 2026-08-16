@@ -53,7 +53,16 @@ export default function Home() {
   function showToast(message: string) { setToast(message); window.setTimeout(() => setToast(""), 2500); }
   function toggleTag(tag: string) { setTags((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag]); }
   function updateListing(id: number, changes: Partial<Listing>) { setListings((current) => current.map((listing) => listing.id === id ? { ...listing, ...changes } : listing)); }
-  function handleFiles(id: number, event: ChangeEvent<HTMLInputElement>) { const files = Array.from(event.target.files ?? []); updateListing(id, { files }); if (files.length) showToast(`${files.length}장의 캡처를 추가했어요.`); }
+  function handleFiles(id: number, event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    setListings((current) => current.map((listing) => listing.id === id ? {
+      ...listing,
+      files,
+      // The initial text is only a demo. Do not send it alongside a real upload.
+      description: files.length && listing.description === defaultDescription ? "" : listing.description,
+    } : listing));
+    if (files.length) showToast(`${files.length}장의 캡처를 추가했어요.`);
+  }
   function addListing() { setListings((current) => [...current, { id: Date.now(), files: [], description: "" }]); showToast("비교할 매물을 추가했어요."); }
   function removeListing(id: number) { setListings((current) => current.filter((listing) => listing.id !== id)); }
 
