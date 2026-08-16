@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="./public/favicon.svg" alt="BuyWise 로고" width="96" />
+  <img src="./team-frontend/buywise-logo.svg" alt="BuyWise 로고" width="222" />
 </p>
-
-<h1 align="center">BuyWise</h1>
 
 <p align="center"><strong>확인 가능한 매물을 고르는 중고거래 도우미</strong></p>
 
