@@ -203,6 +203,22 @@
     {
       "role": "assistant",
       "content": "README에 OpenAI 직접 연동, Vercel 환경변수, AI 트리거 버튼, fallback 동작, team-frontend 분리 규칙과 CODEX_HANDOFF.md 링크를 추가했습니다."
+    },
+    {
+      "role": "user",
+      "content": "초기 판매자 설명은 빈칸으로 두고, 캡처만 업로드하면 AI가 캡처에서 판매글 문구를 추출해 설명 필드를 자동으로 채우고 분석이 진행되게 해줘"
+    },
+    {
+      "role": "assistant",
+      "content": "초기 매물의 판매자 설명을 빈 문자열로 변경하고, OpenAI Vision 분석 응답에 extracted_description 필드를 추가했습니다. 캡처에서 읽은 판매글 문구를 자동으로 설명 필드에 채우며, 사용자가 직접 입력한 설명은 덮어쓰지 않습니다. 캡처만 있어도 분석 요청이 진행되도록 연결했고 Vercel 빌드 성공 후 main에 반영했습니다."
+    },
+    {
+      "role": "user",
+      "content": "Vercel 배포 페이지가 로드되지 않는 오류 화면을 확인해줘"
+    },
+    {
+      "role": "assistant",
+      "content": "공개 Vercel 주소의 HTTP 응답과 HTML·JS 번들을 확인한 결과 현재 sardine-chi.vercel.app은 200 OK로 정상 응답하고 빌드 산출물도 반환하고 있습니다. 브라우저의 일시적 로딩 실패나 배포 직후 캐시 문제일 가능성이 있어 강력 새로고침과 Vercel 최신 배포 Ready 상태 확인을 안내했습니다."
     }
   ]
 }
