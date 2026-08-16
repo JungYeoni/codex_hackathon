@@ -4,6 +4,7 @@
 
 /* App shell layered on top of the team's publishing styles. */
 .app-body{display:flex;min-height:calc(100vh - 78px);background:var(--paper)}
+.listing-empty-preview{width:100%;height:100%;min-height:180px;display:grid;place-items:center;text-align:center;border:1px dashed #b7c3b4;color:#8b988c;font-size:12px;line-height:1.6;background:#f5f7f1}
 .app-sidebar{width:236px;flex:0 0 236px;background:#eef1e9;border-right:1px solid var(--line);padding:28px 16px 22px;display:flex;flex-direction:column;position:relative}
 .sidebar-caption{font-family:'DM Mono',monospace;color:#8a978d;font-size:9px;letter-spacing:.13em;padding:0 10px 14px}
 .sidebar-profile{display:flex;align-items:center;gap:9px;padding:0 8px 24px;border-bottom:1px solid #d8ded5}.sidebar-avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--ink);color:var(--lime);font-family:'DM Mono';font-size:13px}.sidebar-profile strong,.sidebar-profile small{display:block}.sidebar-profile strong{font-size:13px}.sidebar-profile small{font-size:10px;color:var(--muted);margin-top:3px}.sidebar-status{width:7px;height:7px;border-radius:50%;background:#56bf7b;box-shadow:0 0 0 4px rgba(86,191,123,.12);margin-left:auto}
