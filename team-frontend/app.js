@@ -67,7 +67,7 @@ if (document.getElementById('listingList')) {
     document.querySelector('.listing-description').value = '아이폰 14 프로 딥퍼플 256기가입니다. 23년 3월 구매했고 케이스 끼고 써서 깨진 곳 없어요. 생활기스 조금 있고 박스랑 충전 케이블 있습니다. 직거래 선호합니다.';
     toast('예시 매물 정보를 다시 채웠어요.');
   });
-  document.getElementById('analyzeButton').addEventListener('click', () => {
+  document.getElementById('criteriaNext').addEventListener('click', () => {
     localStorage.setItem('salpeobomListingCount', String(document.querySelectorAll('.listing-entry').length));
   });
 }
@@ -90,12 +90,11 @@ function renderAnalysis() {
 if (document.getElementById('comparisonCards')) {
   renderAnalysis();
   document.getElementById('requestExpert').addEventListener('click', () => {
-    document.getElementById('expertTrigger').classList.add('hidden');
     document.getElementById('expertFlow').classList.remove('hidden');
+    document.getElementById('requestExpert').textContent = '전문가 의견을 보고 있어요';
   });
   document.getElementById('closeExpert').addEventListener('click', () => {
     document.getElementById('expertFlow').classList.add('hidden');
-    document.getElementById('expertTrigger').classList.remove('hidden');
   });
   document.getElementById('submitExpert').addEventListener('click', () => {
     appState.expertRequested = true;
